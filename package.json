@@ -1,0 +1,22 @@
+{
+  "name": "parkerai-data-management-service",
+  "version": "1.0.0",
+  "description": "data management service for ParkerAI project",
+  "main": "dataManagementService.js",
+  "scripts": {
+    "test": "nodemon dataManagementService.js"
+  },
+  "author": "parkerai",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "body-parser": "^1.20.2",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.4.5",
+    "mongoose": "^8.5.2",
+    "validator": "^13.12.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
