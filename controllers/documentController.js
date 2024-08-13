@@ -3,7 +3,7 @@ const Camera = require("../models/Camera");
 
 // Add a new document
 exports.addDocument = async (req, res) => {
-  const { fileName, slots, parkingName, cameraId } = req.body;
+  const { fileName, slots, cameraId } = req.body;
 
   try {
     const newDocument = new Document({ fileName, slots, parkingName });
@@ -17,7 +17,12 @@ exports.addDocument = async (req, res) => {
     camera.documents.push(newDocument._id);
     await camera.save();
 
-    res.status(201).json({ message: "Document added successfully", documentId: newDocument._id });
+    res
+      .status(201)
+      .json({
+        message: "Document added successfully",
+        documentId: newDocument._id,
+      });
   } catch (error) {
     res.status(400).json({ message: "Error adding document", error });
   }
@@ -54,7 +59,9 @@ exports.deleteDocument = async (req, res) => {
     if (document) {
       const camera = await Camera.findById(cameraId);
       if (camera) {
-        camera.documents = camera.documents.filter(id => id.toString() !== documentId);
+        camera.documents = camera.documents.filter(
+          (id) => id.toString() !== documentId
+        );
         await camera.save();
       }
       res.status(200).json({ message: "Document deleted successfully" });
