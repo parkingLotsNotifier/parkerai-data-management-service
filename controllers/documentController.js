@@ -1,28 +1,31 @@
 const Document = require("../models/Document");
 const Camera = require("../models/Camera");
+const ParkingLot = require("../models/ParkingLot");
 
 // Add a new document
 exports.addDocument = async (req, res) => {
-  const { fileName, slots, cameraId } = req.body;
+  const { file_name, slots, camera_id } = req.body;
 
   try {
-    const newDocument = new Document({ fileName, slots, parkingName });
-    await newDocument.save();
-
-    const camera = await Camera.findById(cameraId);
+    const camera = await Camera.findById(camera_id);
     if (!camera) {
       return res.status(404).json({ message: "Camera not found" });
     }
+    const parkingLot = await ParkingLot.findById(camera.parkingLot._id);
+    const storeDocument = new Document({
+      file_name,
+      slots,
+      camera,
+      area: camera.area,
+      parking_name: parkingLot.name,
+    });
 
-    camera.documents.push(newDocument._id);
-    await camera.save();
+    await storeDocument.save();
 
-    res
-      .status(201)
-      .json({
-        message: "Document added successfully",
-        documentId: newDocument._id,
-      });
+    res.status(201).json({
+      message: "Document added successfully",
+      documentId: storeDocument._id,
+    });
   } catch (error) {
     res.status(400).json({ message: "Error adding document", error });
   }
@@ -30,7 +33,7 @@ exports.addDocument = async (req, res) => {
 
 // Update a document
 exports.updateDocument = async (req, res) => {
-  const { documentId, fileName, slots, parkingName } = req.body;
+  const { documentId, file_name, slots, camera_id } = req.body;
 
   try {
     const document = await Document.findById(documentId);
@@ -38,9 +41,20 @@ exports.updateDocument = async (req, res) => {
       return res.status(404).json({ message: "Document not found" });
     }
 
-    if (fileName) document.fileName = fileName;
+    if (file_name) document.file_name = file_name;
     if (slots) document.slots = slots;
-    if (parkingName) document.parkingName = parkingName;
+
+    if (camera_id) {
+      const camera = await Camera.findById(camera_id);
+      if (!camera) {
+        return res.status(404).json({ message: "Camera not found" });
+      }
+      document.camera = camera;
+      document.area = camera.area;
+
+      const parkingLot = await ParkingLot.findById(camera.parkingLot._id);
+      document.parking_name = parkingLot.name;
+    }
 
     await document.save();
     res.status(200).json({ message: "Document updated successfully" });

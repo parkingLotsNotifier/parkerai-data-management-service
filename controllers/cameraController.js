@@ -7,7 +7,7 @@ const { parseBlueprint } = require("../utils/data-orgenize/parseBlueprint");
 
 // Add a new camera
 exports.addCamera = async (req, res) => {
-  const { blueprint, parkingLotId, model, location } = req.body;
+  const { blueprint, parkingLotId, model, area } = req.body;
   const userId = req.cookies.userId;
 
   if (!userId) {
@@ -29,6 +29,7 @@ exports.addCamera = async (req, res) => {
       blueprint: documentData,
       parkingLot: parkingLotId,
       model: model,
+      area: area,
     });
 
     await newCamera.save();
