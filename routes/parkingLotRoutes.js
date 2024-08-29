@@ -3,8 +3,10 @@ const parkingLotController = require('../controllers/parkingLotController');
 const router = express.Router();
 
 // Routes for parking lot operations
-router.post('/add', parkingLotController.addParkingLot);
-router.post('/update', parkingLotController.updateParkingLot);
-router.post('/delete', parkingLotController.deleteParkingLot);
+router.post('/addParkingLot', parkingLotController.addParkingLot);
+router.post('/updateParkingLot', parkingLotController.updateParkingLot);
+router.post('/deleteParkingLot', parkingLotController.deleteParkingLot);
+router.post('/updateParkingLotField', parkingLotController.updateParkingLotFieldHandler);
+router.get('/getAllParkingLotsByUserId/:id',parkingLotController.getAllParkingLotsByUserId);
 
 module.exports = router;

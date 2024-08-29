@@ -118,3 +118,54 @@ exports.updateBlueprint = async (req, res) => {
     res.status(400).json({ message: "Error updating blueprint", error });
   }
 };
+
+exports.updateCameraFieldHandler = async (req, res) => {
+  const { cameraId, fieldName, fieldValue, operation } = req.body;
+
+  try {
+    if (!mongoose.Types.ObjectId.isValid(cameraId)) {
+      return res.status(400).send("Invalid Camera ID");
+    }
+
+    let updateObject = {};
+    let categoryNameToBboxList;
+
+    switch (operation) {
+      case "set":
+        if (fieldName == "blueprint") {
+          // Create a new Document object based on the blueprint
+          categoryNameToBboxList = new Blueprint(fieldValue).categoryNameToBbox;
+          fieldValue = parseBlueprint(fieldValue, categoryNameToBboxList);
+        }
+        updateObject = { $set: { [fieldName]: fieldValue } };
+        break;
+      case "push":
+        if (!Array.isArray(fieldValue)) {
+          updateObject = { $push: { [fieldName]: fieldValue } };
+        } else {
+          updateObject = { $push: { [fieldName]: { $each: fieldValue } } };
+        }
+        break;
+      case "pull":
+        updateObject = { $pull: { [fieldName]: fieldValue } };
+        break;
+      case "unset":
+        updateObject = { $unset: { [fieldName]: "" } };
+        break;
+      default:
+        return res.status(400).send("Invalid operation");
+    }
+
+    const result = await Camera.updateOne({ _id: cameraId }, updateObject, {
+      runValidators: true,
+    });
+
+    if (result.nModified === 0) {
+      return res.status(404).send("Camera not found or field not modified");
+    }
+
+    res.status(200).send("Camera field updated successfully");
+  } catch (err) {
+    res.status(500).send("Error updating camera field: " + err.message);
+  }
+};

@@ -3,8 +3,9 @@ const cameraController = require('../controllers/cameraController');
 const router = express.Router();
 
 // Routes for camera operations
-router.post('/add', cameraController.addCamera);
-router.post('/remove', cameraController.removeCamera);
-router.post('/update-blueprint', cameraController.updateBlueprint);
+router.post('/addCamera', cameraController.addCamera);
+router.post('/removeCamera', cameraController.removeCamera);
+router.post('/updateBlueprintCamera', cameraController.updateBlueprint);
+router.post('/updateCameraField', cameraController.updateCameraFieldHandler);
 
 module.exports = router;
