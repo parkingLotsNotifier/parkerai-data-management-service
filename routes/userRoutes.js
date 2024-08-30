@@ -3,7 +3,7 @@ const userController = require("../controllers/userController");
 const router = express.Router();
 
 // Routes for user operations
-router.post("/uploadPhoto", userController.uploadPhoto);
+router.post("/uploadPhoto", userController.uploadPhotoHandler);
 
 
 router.use(express.json({ limit: "10mb" }));

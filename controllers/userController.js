@@ -173,7 +173,7 @@ exports.createUserFolderStructure = async (req, res) => {
 
 const upload = multer({ storage: multer.memoryStorage() }).single("image");
 
-exports.uploadPhoto = [
+exports.uploadPhotoHandler = [
   (req, res, next) => {
     console.log("🚀 ~ req:", req);
 
@@ -211,8 +211,11 @@ exports.uploadPhoto = [
       // Upload the image to Firebase Storage
       await uploadBytes(imageRef, file.buffer);
 
+      const downloadURL = await getDownloadURL(imageRef);
+
       res.status(201).send({
         message: `Image uploaded successfully to '${requestedPath}'.`,
+        downloadURL,
       });
     } catch (error) {
       if (error.code === "storage/object-not-found") {
