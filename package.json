@@ -4,7 +4,7 @@
   "description": "data management service for ParkerAI project",
   "main": "dataManagementService.js",
   "scripts": {
-    "test": "nodemon dataManagementService.js"
+    "dev": "nodemon dataManagementService.js"
   },
   "author": "parkerai",
   "license": "ISC",

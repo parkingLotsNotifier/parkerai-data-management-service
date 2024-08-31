@@ -168,4 +168,43 @@ exports.getAllParkingLotsByUserId = async (req, res) => {
   }
 };
 
+exports.createParkingLotFolderStructureHandler = async (req, res) => {
+  const { userId , parkingLotId } = req.body;
+
+  const storage = getStorageInstance();
+
+  const folderNames = [
+    `${userId}/myparkinglots/${parkingLotId}/`,
+  ];
+
+  try {
+    // Iterate over the list of folder names
+    for (const folderName of folderNames) {
+      const folderPath = folderName;
+      const folderRef = ref(storage, folderPath);
+
+      const listResponse = await listAll(folderRef);
+      if (
+        listResponse.items.length === 0 &&
+        listResponse.prefixes.length === 0
+      ) {
+        // Create a placeholder file to ensure the folder is recognized
+        const placeholderRef = ref(storage, `${folderPath}/.keep`);
+        await uploadString(placeholderRef, ""); // Upload an empty string as the file content
+      }
+    }
+
+    res.status(201).send({
+      created: true,
+      message: `Folders for parkinkLot '${parkingLotId}' were created successfully.`,
+    });
+  } catch (error) {
+    console.error("Error checking or creating folders:", error);
+    res.status(500).send({
+      message: "Error checking or creating folders.",
+      error,
+    });
+  }
+};
+
 
