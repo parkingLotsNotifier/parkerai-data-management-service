@@ -9,6 +9,7 @@ const {
   getStorage,
   getDownloadURL,
 } = require("firebase/storage");
+const sharp = require('sharp');
 const multer = require("multer");
 
 // Get user information (without password)
@@ -205,11 +206,16 @@ exports.uploadPhotoHandler = [
 
       // If we reach this point, the .keep file exists, and the path is valid
 
-      // Define the path for the image
-      const imageRef = ref(storage, `${requestedPath}/${file.originalname}`);
+      // Convert the uploaded image to PNG using sharp
+      const pngBuffer = await sharp(file.buffer)
+        .png() // Convert to PNG format
+        .toBuffer();
 
-      // Upload the image to Firebase Storage
-      await uploadBytes(imageRef, file.buffer);
+      // Define the path for the image in Firebase Storage
+      const imageRef = ref(storage, `${requestedPath}/profile.png`);
+
+      // Upload the converted PNG image to Firebase Storage
+      await uploadBytes(imageRef, pngBuffer);
 
       const downloadURL = await getDownloadURL(imageRef);
 

@@ -4,7 +4,7 @@
   "description": "data management service for ParkerAI project",
   "main": "dataManagementService.js",
   "scripts": {
-    "dev": "nodemon dataManagementService.js"
+    "dev": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first nodemon dataManagementService.js"
   },
   "author": "parkerai",
   "license": "ISC",
@@ -18,9 +18,11 @@
     "firebase": "^10.13.0",
     "mongoose": "^8.5.4",
     "multer": "^1.4.5-lts.1",
+    "sharp": "^0.33.5",
     "validator": "^13.12.0"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "nodemon": "^3.1.4"
   }
 }
