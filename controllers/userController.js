@@ -132,15 +132,28 @@ exports.updateUserFieldHandler = async (req, res) => {
 };
 
 exports.createUserFolderStructure = async (req, res) => {
-  const { userId } = req.body;
+  const { userId, context, parkingLotId } = req.body;
 
   const storage = getStorageInstance();
 
-  const folderNames = [
-    `${userId}/myparkinglots/`,
-    `${userId}/userinformation/`,
-    `${userId}/mycameras/`,
-  ];
+  let folderNames = [];
+
+  if (context === "user") {
+    // Define folder structure for "user" context
+    folderNames = [
+      `${userId}/myparkinglots/`,
+      `${userId}/userinformation/`,
+      `${userId}/mycameras/`,
+    ];
+  } else if (context === "parkinglot" && parkingLotId) {
+    // Define folder structure for "parkinglot" context
+    folderNames = [`${userId}/myparkinglots/${parkingLotId}/`];
+  } else {
+    // Handle invalid or missing context
+    return res.status(400).send({
+      message: "Invalid context or missing necessary parameters.",
+    });
+  }
 
   try {
     // Iterate over the list of folder names
@@ -161,7 +174,7 @@ exports.createUserFolderStructure = async (req, res) => {
 
     res.status(201).send({
       created: true,
-      message: `Folders for user '${userId}' were created successfully.`,
+      message: `Folders for context '${context}' were created successfully.`,
     });
   } catch (error) {
     console.error("Error checking or creating folders:", error);
@@ -212,6 +225,7 @@ exports.uploadPhotoHandler = [
         .toBuffer();
 
       // Define the path for the image in Firebase Storage
+      // TODO: isProfile for handling profile pics case, keeping the handler general 
       const imageRef = ref(storage, `${requestedPath}/profile.png`);
 
       // Upload the converted PNG image to Firebase Storage
