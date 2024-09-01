@@ -56,10 +56,15 @@ exports.updateParkingLot = async (req, res) => {
 
 // Delete a parking lot
 exports.deleteParkingLot = async (req, res) => {
-  const { parkingLotId } = req.body;
-  const userId = req.cookies.userId;
+  const { parkingLotId: { parkingLotId, ownerUserId } = {} } = req.body;
 
-  if (!userId) {
+  console.log("🚀 ~ exports.deleteParkingLot ~ parkingLotId:", parkingLotId);
+  console.log("🚀 ~ exports.deleteParkingLot ~ ownerUserId:", ownerUserId);
+  //const { ownerUserId } = req.user;
+  //const userId = req.cookies.userId;
+  //console.log("🚀 ~ exports.deleteParkingLot ~ userId:", userId)
+
+  if (!ownerUserId) {
     return res
       .status(401)
       .json({ message: "Unauthorized: User ID not provided" });
@@ -69,7 +74,7 @@ exports.deleteParkingLot = async (req, res) => {
     const parkingLot = await ParkingLot.findByIdAndDelete(parkingLotId);
 
     if (parkingLot) {
-      const user = await User.findById(userId);
+      const user = await User.findById(ownerUserId);
       if (user) {
         user.parkingLots = user.parkingLots.filter(
           (id) => id.toString() !== parkingLotId
@@ -169,7 +174,7 @@ exports.getAllParkingLotsByUserId = async (req, res) => {
 };
 
 exports.createParkingLotFolderStructureHandler = async (req, res) => {
-  const { userId , parkingLotId } = req.body;
+  const { userId, parkingLotId } = req.body;
 
   const storage = getStorageInstance();
 
