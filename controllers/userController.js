@@ -174,7 +174,7 @@ exports.createUserFolderStructure = async (req, res) => {
 
     res.status(201).send({
       created: true,
-      message: `Folders for context '${context}' were created successfully.`,
+      message: `Folders for context '${context}' for user '${userId}' were created successfully.`,
     });
   } catch (error) {
     console.error("Error checking or creating folders:", error);
