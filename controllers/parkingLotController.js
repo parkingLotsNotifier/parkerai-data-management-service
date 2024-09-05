@@ -36,19 +36,39 @@ exports.addParkingLot = async (req, res) => {
 
 // Update a parking lot
 exports.updateParkingLot = async (req, res) => {
-  const { parkingLotId, name, location } = req.body;
+  const { parkingLotId, ownerUserId, ...updateData } = req.body;
+  console.log("🚀 ~ exports.updateParkingLot= ~ parkingLotId:", parkingLotId)
+  console.log("🚀 ~ exports.updateParkingLot= ~ updateData:", updateData)
+  console.log("🚀 ~ exports.updateParkingLot= ~ ownerUserId:", ownerUserId)
+
+  if (!ownerUserId) {
+    return res
+      .status(401)
+      .json({ message: "Unauthorized: User ID not provided" });
+  }
 
   try {
+    const user = await User.findById(ownerUserId).exec();
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
     const parkingLot = await ParkingLot.findById(parkingLotId);
     if (!parkingLot) {
       return res.status(404).json({ message: "Parking lot not found" });
     }
 
-    if (name) parkingLot.name = name;
-    if (location) parkingLot.location = location;
+    if (parkingLot.ownerUserId.toString() !== ownerUserId) {
+      return res.status(403).json({ message: "Unauthorized: You don't have permission to update this parking lot" });
+    }
 
+    Object.assign(parkingLot, updateData);
     await parkingLot.save();
-    res.status(200).json({ message: "Parking lot updated successfully" });
+
+    res.status(200).json({
+      message: "Parking lot updated successfully",
+      parkingLotId: parkingLot._id,
+    });
   } catch (error) {
     res.status(400).json({ message: "Error updating parking lot", error });
   }

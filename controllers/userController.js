@@ -189,8 +189,6 @@ const upload = multer({ storage: multer.memoryStorage() }).single("image");
 
 exports.uploadPhotoHandler = [
   (req, res, next) => {
-    console.log("🚀 ~ req:", req);
-
     upload(req, res, (err) => {
       if (err) {
         return res.status(400).send({
