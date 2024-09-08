@@ -4,8 +4,7 @@ const router = express.Router();
 
 // Routes for camera operations
 router.post('/addCamera', cameraController.addCamera);
-router.post('/removeCamera', cameraController.removeCamera);
-router.post('/updateBlueprintCamera', cameraController.updateBlueprint);
+router.post('/updateBlueprintCamera/:id', cameraController.updateBlueprint);
 router.put('/updateCamera/:id', cameraController.updateCamera);
 router.get('/getCameras/:parkingLotId', cameraController.getCameras);
 router.delete('/deleteCamera/:id', cameraController.deleteCamera);

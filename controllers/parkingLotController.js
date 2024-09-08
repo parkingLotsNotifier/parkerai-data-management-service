@@ -232,4 +232,70 @@ exports.createParkingLotFolderStructureHandler = async (req, res) => {
   }
 };
 
+exports.addCameraToParkingLot = async (parkingLotId, cameraId) => {
+  try {
+    await ParkingLot.findByIdAndUpdate(
+      parkingLotId,
+      { $addToSet: { cameraIds: cameraId } },
+      { new: true, runValidators: true }
+    );
+  } catch (error) {
+    console.error("Error adding camera to parking lot:", error);
+    throw error;
+  }
+};
+
+exports.removeCameraFromParkingLot = async (parkingLotId, cameraId) => {
+  try {
+    await ParkingLot.findByIdAndUpdate(
+      parkingLotId,
+      { $pull: { cameraIds: cameraId } },
+      { new: true, runValidators: true }
+    );
+  } catch (error) {
+    console.error("Error removing camera from parking lot:", error);
+    throw error;
+  }
+};
+
+exports.addParkingSlotNames = async (parkingLotId, names) => {
+  try {
+    const parkingLot = await ParkingLot.findById(parkingLotId);
+    if (!parkingLot) {
+      throw new Error("Parking lot not found");
+    }
+
+    const existingNames = new Set(parkingLot.parkingSlotsNames);
+    const duplicateNames = names.filter(name => existingNames.has(name));
+
+    if (duplicateNames.length > 0) {
+      return {
+        error: `The following parking slot names already exist in the parking lot: ${duplicateNames.join(', ')}. Please upload a blueprint with unique names.`
+      };
+    }
+
+    parkingLot.parkingSlotsNames = [...new Set([...parkingLot.parkingSlotsNames, ...names])];
+    await parkingLot.save();
+    return { success: true };
+  } catch (error) {
+    console.error("Error adding parking slot names:", error);
+    throw error;
+  }
+};
+
+exports.removeParkingSlotNames = async (parkingLotId, names) => {
+  try {
+    const parkingLot = await ParkingLot.findById(parkingLotId);
+    if (!parkingLot) {
+      throw new Error("Parking lot not found");
+    }
+
+    parkingLot.parkingSlotsNames = parkingLot.parkingSlotsNames.filter(name => !names.includes(name));
+    await parkingLot.save();
+  } catch (error) {
+    console.error("Error removing parking slot names:", error);
+    throw error;
+  }
+};
+
 
