@@ -7,42 +7,28 @@ const { parseBlueprint } = require("../utils/data-orgenize/parseBlueprint");
 
 // Add a new camera
 exports.addCamera = async (req, res) => {
-  const { blueprint, parkingLotId, model, area } = req.body;
-  const userId = req.cookies.userId;
-
-  if (!userId) {
-    return res
-      .status(401)
-      .json({ message: "Unauthorized: User ID not found in cookies" });
-  }
+  const { cameraModel, area, cameraAddr, blueprint, parkingLotId, userId } = req.body;
 
   try {
-    const parkingLot = await ParkingLot.findById(parkingLotId);
-    if (!parkingLot) {
-      return res.status(404).json({ message: "Parking lot not found" });
-    }
-
-    // Create a new Document object based on the blueprint
-    const categoryNameToBbox = new Blueprint(blueprint).categoryNameToBbox;
-    const documentData = parseBlueprint(blueprint, categoryNameToBbox);
     const newCamera = new Camera({
-      blueprint: documentData,
-      parkingLot: parkingLotId,
-      model: model,
-      area: area,
+      cameraModel,
+      area,
+      cameraAddr,
+      blueprint,
+      parkingLotId,
+      userId,
     });
 
-    await newCamera.save();
 
-    // Add camera to parking lot
-    parkingLot.cameraIds.push(newCamera._id);
-    await parkingLot.save();
-
-    res
-      .status(201)
-      .json({ message: "Camera added successfully", cameraId: newCamera._id });
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized: User ID not provided"
+      });
+    }
+    const savedCamera = await newCamera.save();
+    res.status(201).json(savedCamera);
   } catch (error) {
-    res.status(400).json({ message: "Error adding camera", error });
+    res.status(400).json({ message: "Error adding camera", error: error.message });
   }
 };
 
@@ -119,53 +105,57 @@ exports.updateBlueprint = async (req, res) => {
   }
 };
 
-exports.updateCameraFieldHandler = async (req, res) => {
-  const { cameraId, fieldName, fieldValue, operation } = req.body;
+exports.updateCamera = async (req, res) => {
+  const { id } = req.params;
+  const { cameraModel, area, cameraAddr, blueprint } = req.body;
 
   try {
-    if (!mongoose.Types.ObjectId.isValid(cameraId)) {
-      return res.status(400).send("Invalid Camera ID");
+    const updatedCamera = await Camera.findByIdAndUpdate(
+      id,
+      { cameraModel, area, cameraAddr, blueprint },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedCamera) {
+      return res.status(404).json({ message: "Camera not found" });
     }
 
-    let updateObject = {};
-    let categoryNameToBboxList;
+    res.status(200).json(updatedCamera);
+  } catch (error) {
+    res.status(400).json({ message: "Error updating camera", error: error.message });
+  }
+};
 
-    switch (operation) {
-      case "set":
-        if (fieldName == "blueprint") {
-          // Create a new Document object based on the blueprint
-          categoryNameToBboxList = new Blueprint(fieldValue).categoryNameToBbox;
-          fieldValue = parseBlueprint(fieldValue, categoryNameToBboxList);
-        }
-        updateObject = { $set: { [fieldName]: fieldValue } };
-        break;
-      case "push":
-        if (!Array.isArray(fieldValue)) {
-          updateObject = { $push: { [fieldName]: fieldValue } };
-        } else {
-          updateObject = { $push: { [fieldName]: { $each: fieldValue } } };
-        }
-        break;
-      case "pull":
-        updateObject = { $pull: { [fieldName]: fieldValue } };
-        break;
-      case "unset":
-        updateObject = { $unset: { [fieldName]: "" } };
-        break;
-      default:
-        return res.status(400).send("Invalid operation");
+exports.getCameras = async (req, res) => {
+  const { parkingLotId } = req.params;
+
+  try {
+    const cameras = await Camera.find({ parkingLot: parkingLotId });
+    res.status(200).json(cameras);
+  } catch (error) {
+    res.status(400).json({ message: "Error fetching cameras", error: error.message });
+  }
+};
+
+exports.deleteCamera = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const camera = await Camera.findById(id);
+    if (!camera) {
+      return res.status(404).json({ message: "Camera not found" });
     }
 
-    const result = await Camera.updateOne({ _id: cameraId }, updateObject, {
-      runValidators: true,
+    // Remove the camera from the associated parking lot
+    await ParkingLot.findByIdAndUpdate(camera.parkingLot, {
+      $pull: { cameraIds: camera._id }
     });
 
-    if (result.nModified === 0) {
-      return res.status(404).send("Camera not found or field not modified");
-    }
+    // Delete the camera
+    await Camera.findByIdAndDelete(id);
 
-    res.status(200).send("Camera field updated successfully");
-  } catch (err) {
-    res.status(500).send("Error updating camera field: " + err.message);
+    res.status(200).json({ message: "Camera deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting camera", error: error.message });
   }
 };

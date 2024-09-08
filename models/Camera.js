@@ -2,6 +2,16 @@ const mongoose = require('mongoose');
 
 const cameraSchema = new mongoose.Schema(
   {
+    cameraModel: {
+      type: String,
+      required: [false],
+      minlength: [2, "Camera model must be at least 2 characters long"],
+    },
+    parkingLotId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: [true, "Parking lot ID is required"],
+      ref: "ParkingLot",
+    },
     cameraAddr: {
       type: String,
       required: [true, "Camera address is required"],
@@ -22,16 +32,8 @@ const cameraSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed, // This allows for storing JSON data
       required: [true, "Blueprint must be assigned"],
     },
-    cameraModel: {
-      type: String,
-      required: [false],
-      minlength: [2, "Camera model must be at least 2 characters long"],
-    },
-    parkingLotId: {
-      type: mongoose.Schema.Types.ObjectId,
-      required: [true, "Parking lot ID is required"],
-      ref: "ParkingLot",
-    },
+
+
     cameraDocs: [
       {
         type: mongoose.Schema.Types.ObjectId,
