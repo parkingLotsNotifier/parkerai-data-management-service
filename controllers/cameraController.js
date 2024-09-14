@@ -118,7 +118,8 @@ exports.getCameras = async (req, res) => {
   const { parkingLotId } = req.params;
 
   try {
-    const cameras = await Camera.find({ parkingLot: parkingLotId });
+    console.log("Fetching cameras for parking lot ID:", parkingLotId);
+    const cameras = await Camera.find({ parkingLotId: parkingLotId });
     res.status(200).json(cameras);
   } catch (error) {
     res.status(400).json({ message: "Error fetching cameras", error: error.message });
@@ -188,4 +189,20 @@ function validateBlueprint(blueprint) {
 
   return { isValid: true };
 }
+
+// Add this new function to the existing controller
+exports.getCamera = async (req, res) => {
+  const { cameraId } = req.params;
+
+  try {
+    const camera = await Camera.findById(cameraId);
+    if (!camera) {
+      return res.status(404).json({ message: "Camera not found" });
+    }
+    res.status(200).json(camera);
+  } catch (error) {
+    console.error("Error fetching camera:", error);
+    res.status(500).json({ message: "Error fetching camera", error: error.message });
+  }
+};
 

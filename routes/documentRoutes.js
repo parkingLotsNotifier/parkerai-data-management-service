@@ -6,5 +6,6 @@ const router = express.Router();
 router.post("/store", documentController.addDocument);
 router.post("/update", documentController.updateDocument);
 router.post("/delete", documentController.deleteDocument);
+router.get('/getCameraDocuments/:cameraId', documentController.getCameraDocuments);
 
 module.exports = router;

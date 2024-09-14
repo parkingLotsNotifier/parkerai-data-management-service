@@ -8,5 +8,6 @@ router.post('/updateBlueprintCamera/:id', cameraController.updateBlueprint);
 router.put('/updateCamera/:id', cameraController.updateCamera);
 router.get('/getCameras/:parkingLotId', cameraController.getCameras);
 router.delete('/deleteCamera/:id', cameraController.deleteCamera);
+router.get('/getCamera/:cameraId', cameraController.getCamera);
 
 module.exports = router;
