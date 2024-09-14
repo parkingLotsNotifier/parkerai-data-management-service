@@ -12,11 +12,12 @@ router.post("/updateUser", userController.updateUser);
 router.post("/deleteUser", userController.deleteUser);
 router.post("/updateUserField", userController.updateUserFieldHandler);
 router.get("/getUserInformation/:userId", userController.getUserInformation);
+router.get("/getAllUsers", userController.getAllUsers);
 router.post(
   "/createUserFolderStructure",
   userController.createUserFolderStructure
 );
-router.post("/retriveImage",userController.retrieveImage);
+router.post("/retriveImage", userController.retrieveImage);
 
 
 module.exports = router;
