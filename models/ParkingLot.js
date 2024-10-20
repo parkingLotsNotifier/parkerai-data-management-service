@@ -1,5 +1,19 @@
 const mongoose = require("mongoose");
 
+const dailyOperationHoursSchema = new mongoose.Schema(
+  {
+    startingAt: {
+      type: String,
+      required: false,
+    },
+    endingAt: {
+      type: String,
+      required: false,
+    },
+  },
+  { _id: false }
+);
+
 const parkingLotSchema = new mongoose.Schema(
   {
     parkingLotName: {
@@ -20,16 +34,6 @@ const parkingLotSchema = new mongoose.Schema(
           return v > 0;
         },
         message: (props) => `Hourly parking cost must be greater than zero`,
-      },
-    },
-    operationHours: {
-      startingAt: {
-        type: Date,
-        required: [true, "Operation start time is required"],
-      },
-      endingAt: {
-        type: Date,
-        required: [true, "Operation end time is required"],
       },
     },
     numberOfParkingSlot: {
@@ -84,7 +88,8 @@ const parkingLotSchema = new mongoose.Schema(
         validator: function (v) {
           return v >= 0;
         },
-        message: (props) => `Monthly sum of slots occupancy cannot be negative`,
+        message: (props) =>
+          `Monthly sum of slots occupancy cannot be negative`,
       },
     },
     monthlyEstimatedRevenue: {
@@ -115,7 +120,8 @@ const parkingLotSchema = new mongoose.Schema(
         validator: function (v) {
           return v >= 0;
         },
-        message: (props) => `Monthly client usage counter cannot be negative`,
+        message: (props) =>
+          `Monthly client usage counter cannot be negative`,
       },
     },
     parkingSlotsNames: {
@@ -127,6 +133,19 @@ const parkingLotSchema = new mongoose.Schema(
         ref: "Camera",
       },
     ],
+    operationHours: {
+      monday: dailyOperationHoursSchema,
+      tuesday: dailyOperationHoursSchema,
+      wednesday: dailyOperationHoursSchema,
+      thursday: dailyOperationHoursSchema,
+      friday: dailyOperationHoursSchema,
+      saturday: dailyOperationHoursSchema,
+      sunday: dailyOperationHoursSchema,
+    },
+    isCapture: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

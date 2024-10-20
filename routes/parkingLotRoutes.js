@@ -9,5 +9,6 @@ router.post('/deleteParkingLot', parkingLotController.deleteParkingLot);
 router.post('/updateParkingLotField', parkingLotController.updateParkingLotFieldHandler);
 router.get('/getAllParkingLotsByUserId/:id',parkingLotController.getAllParkingLotsByUserId);
 router.post('/createParkingLotFolderStructure',parkingLotController.createParkingLotFolderStructureHandler);
+router.post('/searchParkingLot',parkingLotController.searchParkingLotHandler)
 
 module.exports = router;

@@ -4,7 +4,10 @@ const ParkingLot = require("../models/ParkingLot");
 const Blueprint = require("../utils/data-orgenize/Blueprint");
 const Document = require("../models/Document");
 const { parseBlueprint } = require("../utils/data-orgenize/parseBlueprint");
-const ParkingLotController = require('./parkingLotController');
+const parkingLotController = require('./parkingLotController');
+const documentController = require('../controllers/documentController');
+
+// TODO: clean code
 
 // Add a new camera
 exports.addCamera = async (req, res) => {
@@ -25,7 +28,11 @@ exports.addCamera = async (req, res) => {
 
     // Add blueprint names to parking lot
     const blueprintNames = blueprint.categories.map(category => category.name);
-    const result = await ParkingLotController.addParkingSlotNames(parkingLotId, blueprintNames);
+    const result = await parkingLotController.addParkingSlotNames(parkingLotId, blueprintNames);
+   
+    // this is what parse the cvat blueprint the user uploaded
+    const categoryNameToBbox = new Blueprint(blueprint).categoryNameToBbox;
+    const documentData = parseBlueprint(blueprint, categoryNameToBbox);
     if (result.error) {
       return res.status(400).json({ message: result.error });
     }
@@ -34,7 +41,7 @@ exports.addCamera = async (req, res) => {
       cameraModel,
       area,
       cameraAddr,
-      blueprint,
+      blueprint: documentData,
       parkingLotId,
       userId,
     });
@@ -42,7 +49,7 @@ exports.addCamera = async (req, res) => {
     const savedCamera = await newCamera.save();
 
     // Add camera to parking lot
-    await ParkingLotController.addCameraToParkingLot(parkingLotId, savedCamera._id);
+    await parkingLotController.addCameraToParkingLot(parkingLotId, savedCamera._id);
 
     res.status(201).json(savedCamera);
   } catch (error) {
@@ -60,11 +67,11 @@ exports.deleteCamera = async (req, res) => {
     }
 
     // Remove the camera from the associated parking lot
-    await ParkingLotController.removeCameraFromParkingLot(camera.parkingLotId, camera._id);
+    await parkingLotController.removeCameraFromParkingLot(camera.parkingLotId, camera._id);
 
     // Remove blueprint names from parking lot
     const blueprintNames = camera.blueprint.categories.map(category => category.name);
-    await ParkingLotController.removeParkingSlotNames(camera.parkingLotId, blueprintNames);
+    await parkingLotController.removeParkingSlotNames(camera.parkingLotId, blueprintNames);
 
     // Delete the camera
     await Camera.findByIdAndDelete(id);
@@ -75,44 +82,89 @@ exports.deleteCamera = async (req, res) => {
   }
 };
 
+// TODO: change route to POST as the others
 exports.updateCamera = async (req, res) => {
   const { id } = req.params;
-  const { cameraModel, area, cameraAddr, blueprint } = req.body;
-
+  // Extract possible fields from req.body
+  const { cameraModel, area, cameraAddr, blueprint, cameraDocId } = req.body;
   try {
     const camera = await Camera.findById(id);
     if (!camera) {
       return res.status(404).json({ message: "Camera not found" });
     }
 
-    // Validate blueprint
-    const blueprintValidation = validateBlueprint(blueprint);
-    if (!blueprintValidation.isValid) {
-      return res.status(400).json({ message: `Invalid blueprint: ${blueprintValidation.error}` });
+    // If blueprint is provided, process it
+    if (blueprint !== undefined) {
+      // Validate blueprint
+      const blueprintValidation = validateBlueprint(blueprint);
+      if (!blueprintValidation.isValid) {
+        return res
+          .status(400)
+          .json({ message: `Invalid blueprint: ${blueprintValidation.error}` });
+      }
+
+      // Parse the CVAT blueprint the user uploaded
+      const categoryNameToBbox = new Blueprint(blueprint).categoryNameToBbox;
+      const documentData = parseBlueprint(blueprint, categoryNameToBbox);
+
+      // Remove old blueprint names from parking lot if the Blueprint exist
+      if (camera.blueprint) {
+        const oldBlueprintNames = camera.blueprint.slots.map(
+          (slot) => slot.lot_name
+        );
+        await parkingLotController.removeParkingSlotNames(
+          camera.parkingLotId,
+          oldBlueprintNames
+        );
+      }
+
+      // Add new blueprint names to parking lot 
+      const newBlueprintNames = blueprint.categories.map(
+        (category) => category.name
+      );
+      const result = await parkingLotController.addParkingSlotNames(
+        camera.parkingLotId,
+        newBlueprintNames
+      );
+      if (result.error) {
+        return res.status(400).json({ message: result.error });
+      }
+
+      // Update blueprint
+      camera.blueprint = documentData;
     }
 
-    // Remove old blueprint names from parking lot
-    const oldBlueprintNames = camera.blueprint.categories.map(category => category.name);
-    await ParkingLotController.removeParkingSlotNames(camera.parkingLotId, oldBlueprintNames);
-
-    // Add new blueprint names to parking lot
-    const newBlueprintNames = blueprint.categories.map(category => category.name);
-    const result = await ParkingLotController.addParkingSlotNames(camera.parkingLotId, newBlueprintNames);
-    if (result.error) {
-      return res.status(400).json({ message: result.error });
+    // Update other fields if they are provided
+    if (cameraModel !== undefined) {
+      camera.cameraModel = cameraModel;
     }
 
-    const updatedCamera = await Camera.findByIdAndUpdate(
-      id,
-      { cameraModel, area, cameraAddr, blueprint },
-      { new: true, runValidators: true }
-    );
+    if (area !== undefined) {
+      camera.area = area;
+    }
 
-    res.status(200).json(updatedCamera);
+    if (cameraAddr !== undefined) {
+      camera.cameraAddr = cameraAddr;
+    }
+
+    // If cameraDocId is provided, push it to cameraDocs array
+    if (cameraDocId !== undefined) {
+        camera.cameraDocs.push(cameraDocId);
+    }
+
+    // Save the updated camera
+    await camera.save();
+
+    
+
+    res.status(200).json(camera);
   } catch (error) {
-    res.status(400).json({ message: "Error updating camera", error: error.message });
+    res
+      .status(400)
+      .json({ message: "Error updating camera", error: error.message });
   }
 };
+
 
 exports.getCameras = async (req, res) => {
   const { parkingLotId } = req.params;
@@ -143,11 +195,11 @@ exports.updateBlueprint = async (req, res) => {
 
     // Remove old blueprint names from parking lot
     const oldBlueprintNames = camera.blueprint.categories.map(category => category.name);
-    await ParkingLotController.removeParkingSlotNames(camera.parkingLotId, oldBlueprintNames);
+    await parkingLotController.removeParkingSlotNames(camera.parkingLotId, oldBlueprintNames);
 
     // Add new blueprint names to parking lot
     const newBlueprintNames = blueprint.categories.map(category => category.name);
-    const result = await ParkingLotController.addParkingSlotNames(camera.parkingLotId, newBlueprintNames);
+    const result = await parkingLotController.addParkingSlotNames(camera.parkingLotId, newBlueprintNames);
     if (result.error) {
       return res.status(400).json({ message: result.error });
     }
@@ -205,4 +257,57 @@ exports.getCamera = async (req, res) => {
     res.status(500).json({ message: "Error fetching camera", error: error.message });
   }
 };
+
+exports.removeCameraDocsHandler = async (req, res) => {
+  const { cameraId } = req.params;
+  const { date } = req.body; // Assuming the date is provided in the request body
+
+  try {
+    // Parse and validate the provided date
+    const providedDate = new Date(date);
+    if (isNaN(providedDate.getTime())) {
+      return res.status(400).json({ message: "Invalid date provided" });
+    }
+    // Find the camera by ID
+    const camera = await Camera.findById(cameraId);
+    if (!camera) {
+      return res.status(404).json({ message: "Camera not found" });
+    }
+    
+    // Check if cameraDocs array is empty
+    if (!camera.cameraDocs || camera.cameraDocs.length === 0) {
+      return res.status(200).json({ message: "No camera documents to remove" });
+    }
+    
+    // Find documents in cameraDocs prior to the provided date
+    const docsToRemove = await Document.find({
+      _id: { $in: camera.cameraDocs },
+      createdAt: { $lt: providedDate },
+    });
+  
+    console.log(docsToRemove)
+
+    if (docsToRemove.length === 0) {
+      return res.status(200).json({ message: "No camera documents to remove prior to the provided date" });
+    }
+    // Get the IDs of the documents to remove
+    const docIdsToRemove = docsToRemove.map(doc => doc._id.toString());
+    
+    // Remove the document IDs from the cameraDocs array
+    camera.cameraDocs = camera.cameraDocs.filter(docId => !docIdsToRemove.includes(docId.toString()));
+
+    // Save the updated camera document
+    await camera.save();
+
+    // Remove the actual documents from the Document collection
+    await documentController.removeDocuments(docIdsToRemove);
+
+    res.status(200).json({ message: "Documents removed successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error removing camera documents", error: error.message });
+  }
+};
+
+
+
 

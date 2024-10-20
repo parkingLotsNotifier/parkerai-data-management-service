@@ -5,6 +5,7 @@ const cameraRoutes = require("./routes/cameraRoutes");
 const parkingLotRoutes = require("./routes/parkingLotRoutes");
 const documentRoutes = require("./routes/documentRoutes");
 const userRoutes = require("./routes/userRoutes");
+const schedulerTask = require("./routes/SchedulerTaskRouter");
 const {
   DB_USERNAME,
   DB_PASSWORD,
@@ -62,7 +63,7 @@ connectMongoDB(DB_USERNAME, DB_PASSWORD, DB_HOST).then(() => {
   // Use document management routes
   app.use("/data-management/document", documentRoutes);
 
-
+  app.use("/data-management/schedulerTask", schedulerTask);
 
   // Start the service
   app.listen(DATA_MANAGMENT_SERVICE_PORT, "0.0.0.0", () => {

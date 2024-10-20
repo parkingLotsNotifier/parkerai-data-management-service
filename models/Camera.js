@@ -4,7 +4,7 @@ const cameraSchema = new mongoose.Schema(
   {
     cameraModel: {
       type: String,
-      required: [false],
+      required: false,
       minlength: [2, "Camera model must be at least 2 characters long"],
     },
     parkingLotId: {

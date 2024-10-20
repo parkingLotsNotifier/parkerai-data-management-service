@@ -6,17 +6,17 @@ const mongoose = require('mongoose');
 // Add a new document
 exports.addDocument = async (req, res) => {
   const { file_name, slots, camera_id } = req.body;
-
+  
   try {
     const camera = await Camera.findById(camera_id);
     if (!camera) {
       return res.status(404).json({ message: "Camera not found" });
     }
-    const parkingLot = await ParkingLot.findById(camera.parkingLot._id);
+    const parkingLot = await ParkingLot.findById(camera.parkingLotId);
     const storeDocument = new Document({
       file_name,
       slots,
-      camera,
+      camera_id: camera._id,
       area: camera.area,
       parking_name: parkingLot.name,
     });
@@ -64,7 +64,8 @@ exports.updateDocument = async (req, res) => {
   }
 };
 
-// Delete a document
+// TODO: if not in use delete
+// Delete a document 
 exports.deleteDocument = async (req, res) => {
   const { documentId, cameraId } = req.body;
 
@@ -133,3 +134,12 @@ exports.getCameraDocuments = async (req, res) => {
     res.status(500).json({ message: "Error fetching camera documents", error: error.message });
   }
 };
+
+// TODO: THIS IS NOT A CONTROLLER
+exports.removeDocuments = async (docIds) =>{
+  try {
+    await Document.deleteMany({ _id: { $in: docIds } });
+  } catch (error) {
+    throw new Error("Error removing documents: " + error.message);
+  }
+}

@@ -2,6 +2,7 @@ const ParkingLot = require("../models/ParkingLot");
 const User = require("../models/User");
 
 
+
 // Add a new parking lot
 exports.addParkingLot = async (req, res) => {
   const { ownerUserId } = req.body;
@@ -39,7 +40,7 @@ exports.updateParkingLot = async (req, res) => {
   const { parkingLotId, ownerUserId, ...updateData } = req.body;
   console.log("🚀 ~ exports.updateParkingLot= ~ parkingLotId:", parkingLotId)
   console.log("🚀 ~ exports.updateParkingLot= ~ updateData:", updateData)
-  console.log("🚀 ~ exports.updateParkingLot= ~ ownerUserId:", ownerUserId)
+  // console.log("🚀 ~ exports.updateParkingLot= ~ ownerUserId:", ownerUserId)
 
   if (!ownerUserId) {
     return res
@@ -61,7 +62,6 @@ exports.updateParkingLot = async (req, res) => {
     if (parkingLot.ownerUserId.toString() !== ownerUserId) {
       return res.status(403).json({ message: "Unauthorized: You don't have permission to update this parking lot" });
     }
-
     Object.assign(parkingLot, updateData);
     await parkingLot.save();
 
@@ -297,5 +297,15 @@ exports.removeParkingSlotNames = async (parkingLotId, names) => {
     throw error;
   }
 };
+
+exports.searchParkingLotHandler = async (req,res) =>{
+  try{
+    const query = req.body;
+    const parkingLots = await ParkingLot.find(query);  
+    return res.status(200).send({parkingLots});
+  }catch(error){
+    return res.status(400).send({message:"Error find Active Monitoring ParkingLots", error});
+  }
+}
 
 

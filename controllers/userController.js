@@ -219,14 +219,14 @@ exports.uploadPhotoHandler = [
 
       // Convert the uploaded image to PNG using sharp
       const pngBuffer = await sharp(file.buffer)
-        .png() // Convert to PNG format
+        .webp() // Convert to WEBP format
         .toBuffer();
 
       // Define the path for the image in Firebase Storage
       // TODO: isProfile for handling profile pics case, keeping the handler general 
-      const imageRef = ref(storage, `${requestedPath}/profile.png`);
+      const imageRef = ref(storage, `${requestedPath}/profile.webp`);
 
-      // Upload the converted PNG image to Firebase Storage
+      // Upload the converted WEBP image to Firebase Storage
       await uploadBytes(imageRef, pngBuffer);
 
       const downloadURL = await getDownloadURL(imageRef);
